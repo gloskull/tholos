@@ -264,6 +264,13 @@ All notable changes to this project are documented here. Format follows
   to reach the eligible total raises the capital and coordination cost of
   address splitting without requiring an external identity system. Closes #168.
 
+- `contracts/asserter-consumer`: pin admin atomically in `__constructor` and
+  authenticate `initialize` with the stored admin to prevent front-running.
+  Restrict `create_assertion_as_self` to admin authorization, maintain
+  instance storage TTL across mutating calls, and use instance storage for trusted
+  contract addresses (`tholos_id`, `token_id`) rather than caller arguments
+  to prevent unauthorized fund drain. Closes #157.
+
 ## [0.3.0] - 2026-08-08
 
 ### Added
