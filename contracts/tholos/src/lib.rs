@@ -343,6 +343,14 @@ pub struct Tholos;
 
 #[contractimpl]
 impl Tholos {
+    /// Pins `admin` atomically with contract creation, preventing a later
+    /// `initialize` call from being front-run to claim the administrator role.
+    pub fn __constructor(env: Env, admin: Address) {
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::Admin, &admin);
+        Self::touch_instance_ttl(&env);
+    }
+
     /// Initializes the contract. `resolvers` must have an odd length so a
     /// simple majority vote can never tie. Size-1 is legal. Combined with
     /// `SelfVote` and the default stall timeout of 0, a dispute whose sole
@@ -355,14 +363,13 @@ impl Tholos {
     /// the asserter.
     pub fn initialize(
         env: Env,
-        admin: Address,
         token: Address,
         bond_amount: i128,
         challenge_window_secs: u64,
         resolvers: Vec<Address>,
         finalize_reward_bps: u32,
     ) -> Result<(), Error> {
-        if env.storage().instance().has(&DataKey::Admin) {
+        if env.storage().instance().has(&DataKey::Token) {
             return Err(Error::AlreadyInitialized);
         }
         if resolvers.is_empty() || resolvers.len().is_multiple_of(2) {
@@ -382,9 +389,13 @@ impl Tholos {
             return Err(Error::InvalidFinalizeReward);
         }
 
+        let admin: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .ok_or(Error::NotInitialized)?;
         admin.require_auth();
 
-        env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::Token, &token);
         env.storage()
             .instance()
@@ -475,6 +486,7 @@ impl Tholos {
     /// execute against a committee it wasn't built for. Day-to-day committee
     /// changes go through `propose_rotation` / `vote_rotation` instead.
     pub fn update_resolvers(env: Env, new_resolvers: Vec<Address>) -> Result<(), Error> {
+        Self::require_initialized(&env)?;
         let admin: Address = env
             .storage()
             .instance()
@@ -726,6 +738,7 @@ impl Tholos {
     /// uncontested; it becomes callable again once unpaused. Only callable by
     /// the admin set at initialization.
     pub fn set_paused(env: Env, paused: bool) -> Result<(), Error> {
+        Self::require_initialized(&env)?;
         let admin: Address = env
             .storage()
             .instance()
@@ -757,6 +770,7 @@ impl Tholos {
     /// `InvalidBondAmount` if `new_bond_amount` is zero, negative, or greater
     /// than `MAX_BOND_AMOUNT`.
     pub fn set_bond_amount(env: Env, new_bond_amount: i128) -> Result<(), Error> {
+        Self::require_initialized(&env)?;
         let admin: Address = env
             .storage()
             .instance()
@@ -804,6 +818,7 @@ impl Tholos {
     /// Only callable by the admin. Fails with `InvalidStallTimeout` if
     /// `stall_timeout_secs` exceeds `MAX_STALL_TIMEOUT_SECS` (7 days).
     pub fn set_stall_timeout(env: Env, stall_timeout_secs: u64) -> Result<(), Error> {
+        Self::require_initialized(&env)?;
         let admin: Address = env
             .storage()
             .instance()
@@ -973,11 +988,7 @@ impl Tholos {
         let token_id: Address = Self::get(&env, &DataKey::Token)?;
         let token_client = token::Client::new(&env, &token_id);
         let balance_before = token_client.balance(&env.current_contract_address());
-        token_client.transfer(
-            &asserter,
-            env.current_contract_address(),
-            &bond_amount,
-        );
+        token_client.transfer(&asserter, env.current_contract_address(), &bond_amount);
         let balance_after = token_client.balance(&env.current_contract_address());
         let asserter_escrow = balance_after.saturating_sub(balance_before).max(0);
 
@@ -1055,11 +1066,7 @@ impl Tholos {
         let token_id: Address = Self::get(&env, &DataKey::Token)?;
         let token_client = token::Client::new(&env, &token_id);
         let balance_before = token_client.balance(&env.current_contract_address());
-        token_client.transfer(
-            &disputer,
-            env.current_contract_address(),
-            &assertion.bond,
-        );
+        token_client.transfer(&disputer, env.current_contract_address(), &assertion.bond);
         let balance_after = token_client.balance(&env.current_contract_address());
         let disputer_escrow = balance_after.saturating_sub(balance_before).max(0);
 
@@ -1318,6 +1325,14 @@ impl Tholos {
         env.storage()
             .instance()
             .extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
+    }
+
+    fn require_initialized(env: &Env) -> Result<(), Error> {
+        if env.storage().instance().has(&DataKey::Token) {
+            Ok(())
+        } else {
+            Err(Error::NotInitialized)
+        }
     }
 
     fn get<T: soroban_sdk::TryFromVal<Env, soroban_sdk::Val>>(
