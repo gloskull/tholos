@@ -973,11 +973,7 @@ impl Tholos {
         let token_id: Address = Self::get(&env, &DataKey::Token)?;
         let token_client = token::Client::new(&env, &token_id);
         let balance_before = token_client.balance(&env.current_contract_address());
-        token_client.transfer(
-            &asserter,
-            env.current_contract_address(),
-            &bond_amount,
-        );
+        token_client.transfer(&asserter, env.current_contract_address(), &bond_amount);
         let balance_after = token_client.balance(&env.current_contract_address());
         let asserter_escrow = balance_after.saturating_sub(balance_before).max(0);
 
@@ -1055,11 +1051,7 @@ impl Tholos {
         let token_id: Address = Self::get(&env, &DataKey::Token)?;
         let token_client = token::Client::new(&env, &token_id);
         let balance_before = token_client.balance(&env.current_contract_address());
-        token_client.transfer(
-            &disputer,
-            env.current_contract_address(),
-            &assertion.bond,
-        );
+        token_client.transfer(&disputer, env.current_contract_address(), &assertion.bond);
         let balance_after = token_client.balance(&env.current_contract_address());
         let disputer_escrow = balance_after.saturating_sub(balance_before).max(0);
 
