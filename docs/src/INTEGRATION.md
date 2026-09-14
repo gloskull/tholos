@@ -96,7 +96,17 @@ amount Tholos will end up calling. That means you need to already know Tholos's
 configured token and bond amount to construct the right authorization, since
 there's no way to ask Tholos for the sub-invocation it's about to make ahead of
 time. Only take this path if pooling bonds under your contract is a real
-requirement, not a default choice.
+requirement, not a default choice. Because your contract self-authorizes
+the token transfer on its own behalf, any entrypoint triggering
+`authorize_as_current_contract` MUST be authenticated (e.g. restricted to an
+authorized admin via `require_auth()`), and trusted contract addresses
+(`tholos_id`, `token_id`) should be pinned in instance storage rather than
+accepted as untrusted caller inputs (#157). To prevent front-running
+during contract deployment, the admin address is atomically pinned in
+`__constructor(admin)` at instance creation time. A subsequent
+`initialize(tholos_id, token_id)` call authenticates against the stored admin
+to pin the trusted targets once and for all, while mutating operational calls
+(`create_assertion_as_self`) maintain instance storage TTL (`extend_ttl`).
 
 ## Calling Tholos from a browser or Node app
 
