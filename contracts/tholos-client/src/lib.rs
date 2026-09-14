@@ -30,6 +30,13 @@ pub enum Error {
     /// No assertion exists under the given id on the Tholos instance at
     /// `tholos_id`.
     AssertionNotFound = 4,
+    /// The consumer contract has not been initialized yet. Lifecycle errors
+    /// are hosted in this shared client error enum so consumers and off-chain callers
+    /// can handle consumer deployment lifecycle states and Tholos-forwarded errors
+    /// uniformly without duplicate error type definitions.
+    NotInitialized = 5,
+    /// The consumer contract has already been initialized.
+    AlreadyInitialized = 6,
 }
 
 impl Error {
