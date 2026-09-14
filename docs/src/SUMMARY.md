@@ -15,6 +15,7 @@
     - [Mainnet Operational Runbook](MAINNET_RUNBOOK.md)
     - [Deployment & Operations: Protocol v2](DEPLOYMENT_V2.md)
         - [V2 Bond Sizing and Window Analysis](V2_BOND_SIZING.md)
+        - [V2 Anti-Snipe Throttle Analysis](V2_ANTI_SNIPE_THROTTLE.md)
 - [Integration Guide](INTEGRATION.md)
     - [v1/v2 Migration Runbook](V2_MIGRATION.md)
 - [Glossary](GLOSSARY.md)
