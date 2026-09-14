@@ -104,7 +104,7 @@ For the profiles in [V2_BOND_SIZING.md](V2_BOND_SIZING.md):
 | Profile | `T_reg` | `T_ext` | `T_hard` | Max extensions |
 | ------- | ------- | ------- | -------- | -------------- |
 | Private beta | 3 600 s (1 h) | 300 s (5 min) | 7 200 s (2 h) | 12 |
-| Public testnet | 14 400 s (4 h) | 600 s (10 min) | 43 200 s (12 h) | 47 |
+| Public testnet | 14 400 s (4 h) | 600 s (10 min) | 43 200 s (12 h) | 48 |
 | Higher-value mainnet | 43 200 s (12 h) | 1 800 s (30 min) | 172 800 s (48 h) | 72 |
 
 The hard cap does two things at once: it limits the wall-clock damage an
@@ -150,12 +150,14 @@ operation.
 
 ### Comparing to `max_total_weight`
 
-The attack cost floor above — `72 × base_bond` — sits just inside the
-`max_total_weight = 30 × base_bond` cap for the mainnet profile, which
-means the attacker *cannot actually trigger all 72 extensions* under that
-profile: the eligible total cap stops accepting new positions before the
-hard deadline is reached. The real maximum attacker spend is bounded by the
-lower of the two limits:
+The attack cost floor above — `72 × base_bond` — far exceeds the
+`max_total_weight = 30 × base_bond` cap for the mainnet profile (and the
+`28 × base_bond` of third-party headroom once the asserter and disputer
+bonds are reserved). This is precisely why the attacker *cannot actually
+trigger all 72 extensions* under that profile: `max_total_weight` is
+exhausted long before the hard deadline is reached, making it the binding
+constraint. The real maximum attacker spend is bounded by the lower of the
+two limits:
 
 ```text
 practical_attack_ceiling
