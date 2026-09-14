@@ -2292,8 +2292,13 @@ fn test_fee_on_transfer_resolve_uses_available_balance() {
     client.resolve(&resolvers.get(0).unwrap(), &id, &true);
     client.resolve(&resolvers.get(1).unwrap(), &id, &true);
 
-    // The resolver payout must not exceed the contract's actual balance.
-    assert!(fee_token.balance(&contract_id) >= 0);
+    // The payout is capped by the actual escrow (171), not the nominal
+    // 2 x bond (200): the contract sends its entire escrow to the winning
+    // asserter and is drained to exactly zero. The fee token also charges
+    // its fee on the outgoing transfer, so the asserter receives
+    // 171 - 17 = 154 on top of the 900 left after posting the bond.
+    assert_eq!(fee_token.balance(&contract_id), 0);
+    assert_eq!(fee_token.balance(&asserter), 900 + 154);
 }
 // ---------------------------------------------------------------------------
 // Property-based tests for resolver vote counting and majority logic
