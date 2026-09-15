@@ -271,6 +271,17 @@ All notable changes to this project are documented here. Format follows
   contract addresses (`tholos_id`, `token_id`) rather than caller arguments
   to prevent unauthorized fund drain. Closes #157.
 
+- `contracts/tholos`: bonds and dispute deposits are now recorded as the
+  amount the contract actually received (measured by balance delta across the
+  transfer) rather than the nominal requested amount, with a per-assertion
+  escrow balance tracked separately and resolution payouts capped by both the
+  escrow and the contract's live token balance. Previously a fee-on-transfer
+  token could leave the recorded bond larger than the tokens actually held,
+  deadlocking a disputed assertion since `resolve` required transferring a
+  payout the contract could never cover. Adds `Error::TokenTransferMismatch
+  = 28` for transfers whose received amount is non-positive or overflows
+  accounting. Closes #164.
+
 ## [0.3.0] - 2026-08-08
 
 ### Added
